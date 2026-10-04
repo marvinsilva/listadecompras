@@ -1,99 +1,138 @@
 <!DOCTYPE html>
-<html lang="pt-BR">
+<html lang="pt-BR" class="light">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Zaffari Rota Otimizada</title>
   <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+    }
+  </script>
 </head>
-<body class="bg-gray-100 text-gray-800 pb-12">
+<body id="app-body" class="bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-100 min-h-screen pb-12 transition-colors duration-200">
   <div class="max-w-md mx-auto p-4">
-    <!-- Cabeçalho -->
-    <header class="mb-6 text-center">
-      <h1 class="text-2xl font-bold text-red-700">Zaffari Express Route</h1>
-      <p class="text-xs text-gray-500">Início e Saída pela Entrada 1 / Caixas</p>
+    
+    <!-- Cabeçalho com Toggle de Tema -->
+    <header class="mb-6 flex justify-between items-center">
+      <div class="text-left">
+        <h1 class="text-2xl font-bold text-red-600 dark:text-red-500">Zaffari Express</h1>
+        <p class="text-xs text-gray-500 dark:text-gray-400">Rota por Corredores • Entrada 1</p>
+      </div>
+      <button onclick="toggleDarkMode()" class="p-2 rounded-lg bg-gray-200 dark:bg-gray-800 text-lg hover:opacity-80">
+        <span id="theme-icon">🌙</span>
+      </button>
     </header>
 
-    <!-- Painel 1: Adicionar Itens -->
-    <div id="panel-edit" class="bg-white rounded-xl shadow-md p-4 mb-6">
+    <!-- Painel 1: Edição da Lista -->
+    <div id="panel-edit" class="bg-white dark:bg-gray-800 rounded-xl shadow-md p-4 mb-6 transition-colors">
       <h2 class="text-lg font-semibold mb-3">Lista de Compras</h2>
+      
       <div class="flex gap-2 mb-4">
-        <input type="text" id="item-input" placeholder="Ex: Arroz, Queijo, Detergente..." 
-               class="flex-1 border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-red-500">
-        <button onclick="addItem()" class="bg-red-600 text-white font-semibold px-4 py-2 rounded-lg text-sm hover:bg-red-700">
+        <input type="text" id="item-input" 
+               onkeydown="if(event.key === 'Enter') addItem()"
+               placeholder="Ex: sabonete, pão, carne, leite..." 
+               class="flex-1 border dark:border-gray-700 bg-gray-50 dark:bg-gray-900 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-red-500">
+        <button onclick="addItem()" class="bg-red-600 hover:bg-red-700 text-white font-semibold px-4 py-2 rounded-lg text-sm transition">
           + Add
         </button>
       </div>
 
-      <ul id="shopping-list" class="divide-y divide-gray-100 mb-4">
-        <!-- Itens inseridos aparecem aqui -->
+      <ul id="shopping-list" class="divide-y divide-gray-100 dark:divide-gray-700 mb-4">
+        <!-- Itens vão aparecer aqui -->
       </ul>
 
-      <button id="btn-start" onclick="startShopping()" class="w-full bg-green-600 text-white font-bold py-3 rounded-lg text-center hidden hover:bg-green-700 shadow">
+      <button id="btn-start" onclick="startShopping()" class="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-3 rounded-lg text-center hidden shadow transition">
         🚀 Iniciar Compras (Gerar Rota)
       </button>
     </div>
 
     <!-- Painel 2: Modo Compras / Rota -->
-    <div id="panel-route" class="bg-white rounded-xl shadow-md p-4 hidden">
-      <div class="flex justify-between items-center mb-4 border-b pb-2">
-        <h2 class="text-lg font-semibold text-green-700">Rota Otimizada</h2>
-        <button onclick="resetApp()" class="text-xs text-gray-500 hover:text-red-600">Editar Lista</button>
+    <div id="panel-route" class="bg-white dark:bg-gray-800 rounded-xl shadow-md p-4 hidden transition-colors">
+      <div class="flex justify-between items-center mb-4 border-b dark:border-gray-700 pb-2">
+        <h2 class="text-lg font-semibold text-green-600 dark:text-green-400">Rota Otimizada</h2>
+        <button onclick="resetApp()" class="text-xs text-gray-500 hover:text-red-500 underline">Editar Lista</button>
       </div>
 
       <div id="route-steps" class="space-y-3">
-        <!-- Passos do trajeto gerados via JS -->
+        <!-- Passos gerados via JS -->
       </div>
     </div>
+
   </div>
 
   <script>
-    // Dicionário do Mapa baseado no desenho (Coordenadas X, Y)
+    // Função para normalizar texto (remove acentos e letras maiúsculas)
+    function normalize(text) {
+      return text
+        .toLowerCase()
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .trim();
+    }
+
+    // Dicionário Completo de Setores com base na Imagem
     const SECTORS = [
-      // Linha Frente (Y=1)
-      { x: 1, y: 1, name: "Bebidas, Sorvetes e Gelo", tags: ["bebidas", "refrigerante", "agua", "suco", "sorvete", "gelo", "cerveja", "vinho"] },
-      { x: 2, y: 1, name: "Grãos e Mercearia Seca", tags: ["arroz", "feijao", "farinha", "açucar", "sal", "achocolatado"] },
-      { x: 3, y: 1, name: "Biscoitos, Café e Massas", tags: ["biscoito", "bolacha", "cafe", "massa", "macarrao", "erva mate"] },
-      { x: 4, y: 1, name: "Doces em Compota e Gelatinas", tags: ["doce", "compota", "mumu", "bolo", "gelatina"] },
-      { x: 5, y: 1, name: "Higiene e Limpeza", tags: ["detergente", "sabao", "shampoo", "papel higienico", "desodorante", "pasta de dente", "creme dental", "amaciante", "pano"] },
-      { x: 6, y: 1, name: "Bazar e Papelaria", tags: ["caderno", "brinquedo", "pote", "carvao", "camping"] },
-      { x: 7, y: 1, name: "Eletrônicos e Cigarros", tags: ["tv", "computador", "radio", "isqueiro", "cigarro"] },
+      // Linha 1: Frente (Y=1)
+      { x: 1, y: 1, name: "Bebidas, Sorvetes e Gelo", tags: ["bebida", "refrigerante", "agua", "suco", "sorvete", "gelo", "cerveja", "vinho", "espumante", "energetico"] },
+      { x: 2, y: 1, name: "Grãos e Mercearia Seca", tags: ["arroz", "feijao", "farinha", "açucar", "acucar", "sal", "achocolatado", "nescau", "toddy", "graos", "farofa"] },
+      { x: 3, y: 1, name: "Biscoitos, Café e Massas", tags: ["biscoito", "bolacha", "cafe", "massa", "macarrao", "erva mate", "spaghetti", "miojo"] },
+      { x: 4, y: 1, name: "Doces em Compota e Gelatinas", tags: ["doce", "compota", "mumu", "doce de leite", "bolo", "bolo pronto", "gelatina", "pudim"] },
+      { x: 5, y: 1, name: "Higiene e Limpeza", tags: ["sabonete", "papel higienico", "shampoo", "condicionador", "desodorante", "creme dental", "pasta de dente", "lenco umedecido", "agua sanitaria", "detergente", "sabao", "amaciante", "esponja", "pano", "limpeza"] },
+      { x: 6, y: 1, name: "Bazar e Papelaria", tags: ["papelaria", "brinquedo", "camping", "praia", "churrasco", "pote", "pote de plastico", "pote de vidro", "carvao"] },
+      { x: 7, y: 1, name: "Eletrônicos e Cigarros", tags: ["eletronico", "tv", "radio", "computador", "eletrodomestico", "geladeira", "isqueiro", "cigarro", "pilha"] },
 
-      // Linha Meio (Y=2)
-      { x: 1, y: 2, name: "Laticínios e Manteigas", tags: ["iogurte", "requeijao", "margarina", "manteiga"] },
-      { x: 2, y: 2, name: "Leite e Ovos", tags: ["leite", "ovo", "ovos"] },
-      { x: 3, y: 2, name: "Molhos e Enlatados", tags: ["leite condensado", "molho", "creme de leite", "leite em po", "enlatado", "tempero", "fermento", "pasta de amendoim"] },
-      { x: 4, y: 2, name: "Cereais e Salgadinhos", tags: ["cereal", "chocolate", "salgadinho", "doce diferente"] },
-      { x: 5, y: 2, name: "Hortifruti e Flores", tags: ["hortifruti", "fruta", "verdura", "legume", "maca", "banana", "tomate", "flores"] },
-      { x: 6, y: 2, name: "Ferragem, Carro e Pet", tags: ["ferramenta", "oleo", "parafuso", "racao", "gato", "cachorro"] },
-      { x: 7, y: 2, name: "Prataria e Utilidades", tags: ["prato", "copo", "caneca", "talher", "panela"] },
+      // Linha 2: Meio (Y=2)
+      { x: 1, y: 2, name: "Laticínios e Manteigas", tags: ["iogurte", "requeijao", "margarina", "manteiga", "yakult"] },
+      { x: 2, y: 2, name: "Leite e Ovos", tags: ["leite", "ovo", "ovos", "leite desnatado", "leite integral"] },
+      { x: 3, y: 2, name: "Molhos e Enlatados", tags: ["leite condensado", "molho", "extrato de tomate", "creme de leite", "leite em po", "enlatado", "milho", "ervilha", "sardinha", "atun", "tempero", "fermento", "pasta de amendoim"] },
+      { x: 4, y: 2, name: "Cereais e Salgadinhos", tags: ["cereal", "barrinha", "barrinha de cereal", "sucrilhos", "chocolate", "salgadinho", "doritos", "cheetos", "fandangos", "bala", "bombom"] },
+      { x: 5, y: 2, name: "Hortifruti e Flores", tags: ["hortifruti", "fruta", "verdura", "legume", "banana", "maca", "tomate", "cebola", "alho", "batata", "cenoura", "alface", "flores", "flor"] },
+      { x: 6, y: 2, name: "Ferragem, Carro e Pet", tags: ["ferragem", "ferramenta", "oleo", "carro", "parafuso", "conserto", "racao", "gato", "cachorro", "pet"] },
+      { x: 7, y: 2, name: "Prataria e Cerâmicas", tags: ["prataria", "ceramica", "prato", "copo", "caneca", "talher", "panela", "decoracao"] },
 
-      // Linha Fundos (Y=3)
-      { x: 1, y: 3, name: "Frios e Queijos", tags: ["queijo", "linguicinha", "bacon", "salame", "frios", "presunto"] },
-      { x: 2, y: 3, name: "Padaria e Pães", tags: ["padaria", "pao", "paes", "salgado", "doce de festa", "suco de laranja"] },
-      { x: 4, y: 3, name: "Açougue e Peixaria", tags: ["carne", "frango", "porco", "peixe", "maminha", "picanha", "file"] },
-      { x: 6, y: 3, name: "Cama, Mesa e Banho", tags: ["roupa", "pijama", "lençol", "travesseiro", "toalha"] }
+      // Linha 3: Fundos (Y=3)
+      { x: 1, y: 3, name: "Frios e Queijos", tags: ["linguicinha", "linguica", "bacon", "salame", "queijo", "frios", "presunto", "peito de peru", "mortadela"] },
+      { x: 2, y: 3, name: "Padaria e Pães", tags: ["padaria", "pao", "paes", "salgado", "doce de padaria", "suco natural de laranja", "doce de festa", "cuca"] },
+      { x: 4, y: 3, name: "Açougue e Peixaria", tags: ["acougue", "carne", "carnes", "frango", "carne de porco", "porco", "peixe", "peixes", "picanha", "maminha", "costela", "alcatra", "moida"] },
+      { x: 6, y: 3, name: "Cama, Mesa e Banho", tags: ["roupa", "pijama", "roupa de cama", "travesseiro", "toalha", "coberta", "lençol"] }
     ];
 
     let items = [];
 
+    // Busca o setor ideal priorizando correspondência de tags mais longas
     function findSector(itemName) {
-      const clean = itemName.toLowerCase().trim();
+      const cleanInput = normalize(itemName);
+      let bestMatch = null;
+      let maxTagLength = 0;
+
       for (const sector of SECTORS) {
-        if (sector.tags.some(tag => clean.includes(tag))) {
-          return sector;
+        for (const tag of sector.tags) {
+          const cleanTag = normalize(tag);
+          if (cleanInput.includes(cleanTag)) {
+            if (cleanTag.length > maxTagLength) {
+              maxTagLength = cleanTag.length;
+              bestMatch = sector;
+            }
+          }
         }
       }
-      // Se não reconhecer, joga na Mercearia Padrão (2,1)
-      return SECTORS[1];
+
+      // Se não encontrar, coloca no setor de Grãos (2,1) como padrão
+      return bestMatch || SECTORS[1];
     }
 
-    // Calcula o peso de ordenação Serpentina (S-Shape) saindo de (1,1)
-    function calculateSOrder(x, y) {
-      if (y === 1) return x;          // Passada 1 (Frente): Esquerda -> Direita
-      if (y === 2) return 14 - x + 1; // Passada 2 (Meio): Direita -> Esquerda
-      if (y === 3) return 14 + x;     // Passada 3 (Fundos): Esquerda -> Direita
-      return 99;
+    // Algoritmo de Serpentina Vertical (Corredor a Corredor)
+    // Corredores Ímpares (X=1,3,5,7): Sobe da Frente (Y=1) aos Fundos (Y=3)
+    // Corredores Pares (X=2,4,6): Desce dos Fundos (Y=3) à Frente (Y=1)
+    function calculateVerticalAisleOrder(x, y) {
+      const isOddAisle = (x % 2 !== 0);
+      if (isOddAisle) {
+        return (x - 1) * 10 + y;
+      } else {
+        return (x - 1) * 10 + (4 - y);
+      }
     }
 
     function addItem() {
@@ -119,9 +158,12 @@
 
       items.forEach(item => {
         listEl.innerHTML += `
-          <li class="py-2 flex justify-between items-center text-sm">
-            <span><strong>${item.name}</strong> <span class="text-xs text-gray-400">(${item.sector.name})</span></span>
-            <button onclick="removeItem(${item.id})" class="text-red-500 hover:text-red-700 text-xs">Excluir</button>
+          <li class="py-2.5 flex justify-between items-center text-sm">
+            <span>
+              <strong>${item.name}</strong> 
+              <span class="text-xs text-gray-400 dark:text-gray-500 block">Setor: ${item.sector.name}</span>
+            </span>
+            <button onclick="removeItem(${item.id})" class="text-red-500 hover:text-red-700 text-xs px-2 py-1">Excluir</button>
           </li>
         `;
       });
@@ -134,10 +176,10 @@
     }
 
     function startShopping() {
-      // Ordena a lista usando a rota S-Shape
+      // Ordena usando a lógica de corredores verticais
       items.sort((a, b) => {
-        const orderA = calculateSOrder(a.sector.x, a.sector.y);
-        const orderB = calculateSOrder(b.sector.x, b.sector.y);
+        const orderA = calculateVerticalAisleOrder(a.sector.x, a.sector.y);
+        const orderB = calculateVerticalAisleOrder(b.sector.x, b.sector.y);
         return orderA - orderB;
       });
 
@@ -159,11 +201,15 @@
       items.forEach((item, index) => {
         const isChecked = item.checked;
         routeEl.innerHTML += `
-          <div onclick="toggleCheck(${item.id})" class="p-3 rounded-lg border cursor-pointer transition ${isChecked ? 'bg-gray-100 opacity-50 border-gray-200' : 'bg-red-50 border-red-200 shadow-sm'}">
+          <div onclick="toggleCheck(${item.id})" class="p-3.5 rounded-lg border cursor-pointer transition ${isChecked ? 'bg-gray-100 dark:bg-gray-900 border-gray-200 dark:border-gray-800 opacity-50' : 'bg-red-50 dark:bg-gray-700/50 border-red-200 dark:border-gray-600 shadow-sm'}">
             <div class="flex items-center justify-between">
               <div>
-                <span class="text-xs font-bold ${isChecked ? 'text-gray-400' : 'text-red-600'}">Passo ${index + 1} • ${item.sector.name}</span>
-                <p class="text-base font-semibold ${isChecked ? 'line-through text-gray-500' : 'text-gray-900'}">${item.name}</p>
+                <span class="text-xs font-bold ${isChecked ? 'text-gray-400' : 'text-red-600 dark:text-red-400'}">
+                  Passo ${index + 1} • Corredor ${item.sector.x} (${item.sector.name})
+                </span>
+                <p class="text-base font-semibold ${isChecked ? 'line-through text-gray-400' : 'text-gray-900 dark:text-gray-100'}">
+                  ${item.name}
+                </p>
               </div>
               <input type="checkbox" ${isChecked ? 'checked' : ''} class="h-5 w-5 text-red-600 rounded">
             </div>
@@ -175,6 +221,27 @@
     function resetApp() {
       document.getElementById('panel-route').classList.add('hidden');
       document.getElementById('panel-edit').classList.remove('hidden');
+    }
+
+    // Alternar Modo Escuro / Claro
+    function toggleDarkMode() {
+      const html = document.documentElement;
+      const icon = document.getElementById('theme-icon');
+      if (html.classList.contains('dark')) {
+        html.classList.remove('dark');
+        icon.innerText = '🌙';
+        localStorage.setItem('theme', 'light');
+      } else {
+        html.classList.add('dark');
+        icon.innerText = '☀️';
+        localStorage.setItem('theme', 'dark');
+      }
+    }
+
+    // Carregar preferência de tema salva
+    if (localStorage.getItem('theme') === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+      document.documentElement.classList.add('dark');
+      document.getElementById('theme-icon').innerText = '☀️';
     }
   </script>
 </body>
