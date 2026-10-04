@@ -2,19 +2,30 @@
 <html lang="pt-BR" class="light">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Zaffari Rota Otimizada</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Zaffari Express Route</title>
+
+  <!-- PWA & Favicon para iOS / Safari -->
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🛒</text></svg>">
+  <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/3144/3144456.png">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="Zaffari Route">
+
+  <!-- Tailwind CSS -->
   <script src="https://cdn.tailwindcss.com"></script>
   <script>
-    tailwind.config = {
-      darkMode: 'class',
-    }
+    tailwind.config = { darkMode: 'class' }
   </script>
+
+  <!-- Firebase (CDN para Sincronização em Tempo Real) -->
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
 </head>
 <body id="app-body" class="bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-100 min-h-screen pb-12 transition-colors duration-200">
   <div class="max-w-md mx-auto p-4">
     
-    <!-- Cabeçalho com Toggle de Tema -->
+    <!-- Cabeçalho -->
     <header class="mb-6 flex justify-between items-center">
       <div class="text-left">
         <h1 class="text-2xl font-bold text-red-600 dark:text-red-500">Zaffari Express</h1>
@@ -43,9 +54,14 @@
         <!-- Itens inseridos aparecem aqui -->
       </ul>
 
-      <button id="btn-start" onclick="startShopping()" class="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-3 rounded-lg text-center hidden shadow transition">
-        🚀 Iniciar Compras (Gerar Rota)
-      </button>
+      <div class="flex gap-2">
+        <button id="btn-start" onclick="startShopping()" class="flex-1 bg-green-600 hover:bg-green-700 text-white font-bold py-3 rounded-lg text-center hidden shadow transition">
+          🚀 Iniciar Compras (Gerar Rota)
+        </button>
+        <button id="btn-clear" onclick="clearList()" class="bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-300 font-semibold px-3 py-3 rounded-lg text-xs hidden hover:bg-red-100 hover:text-red-600">
+          Limpar Tudo
+        </button>
+      </div>
     </div>
 
     <!-- Painel 2: Modo Compras / Rota -->
@@ -63,37 +79,56 @@
   </div>
 
   <script>
-    // Remove acentos e converte para minúsculas
-    function normalize(text) {
-      return text
-        .toLowerCase()
-        .normalize("NFD")
-        .replace(/[\u0300-\u036f]/g, "")
-        .trim();
+    /* -------------------------------------------------------------
+       1. CONFIGURAÇÃO DO FIREBASE (Sincronização entre Dispositivos)
+       Para ativar o sync em tempo real entre o seu celular e o da sua esposa,
+       substitua as credenciais abaixo pelas do seu projeto no Firebase.
+    ----------------------------------------------------------------- */
+    const firebaseConfig = {
+      apiKey: "SUA_API_KEY",
+      authDomain: "SEU_PROJETO.firebaseapp.com",
+      databaseURL: "https://SEU_PROJETO-default-rtdb.firebaseio.com",
+      projectId: "SEU_PROJETO",
+      storageBucket: "SEU_PROJETO.appspot.com",
+      messagingSenderId: "123456789",
+      appId: "1:123456789:web:abcdef"
+    };
+
+    let useFirebase = false;
+    let dbRef = null;
+
+    // Inicializa Firebase apenas se a chave tiver sido configurada
+    if (firebaseConfig.apiKey !== "SUA_API_KEY") {
+      try {
+        firebase.initializeApp(firebaseConfig);
+        dbRef = firebase.database().ref('zaffari_shopping_list');
+        useFirebase = true;
+      } catch (e) {
+        console.warn("Erro ao conectar no Firebase. Usando apenas localStorage.", e);
+      }
     }
 
-    // Mapeamento dos Setores com Ordem Sequencial de Circuito
+    /* -------------------------------------------------------------
+       2. MAPEAMENTO DOS SETORES (Baseado na Imagem do Layout)
+    ----------------------------------------------------------------- */
+    function normalize(text) {
+      return text.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim();
+    }
+
     const SECTORS = [
-      // FASE 1: Subida Inicial pela Esquerda (Entrada -> Fundos)
       { id: "bebidas", order: 1, zone: "Entrada / Frente", name: "Bebidas, Sorvetes e Gelo", tags: ["bebida", "refrigerante", "agua", "suco", "sorvete", "gelo", "cerveja", "vinho", "espumante", "energetico"] },
       { id: "laticinios", order: 2, zone: "Corredor Central - Esquerda", name: "Laticínios e Manteigas", tags: ["iogurte", "requeijao", "margarina", "manteiga", "yakult"] },
       { id: "frios", order: 3, zone: "Fundos - Esquerda", name: "Frios e Queijos", tags: ["linguicinha", "linguica", "bacon", "salame", "queijo", "frios", "presunto", "peito de peru", "mortadela"] },
       { id: "graos", order: 4, zone: "Frente - Esquerda", name: "Grãos e Mercearia Seca", tags: ["arroz", "feijao", "farinha", "açucar", "acucar", "sal", "achocolatado", "nescau", "toddy", "graos", "farofa"] },
       { id: "leite_ovos", order: 5, zone: "Corredor Central - Esquerda", name: "Leite e Ovos", tags: ["leite", "ovo", "ovos", "leite desnatado", "leite integral"] },
       { id: "padaria", order: 6, zone: "Fundos - Esquerda/Meio", name: "Padaria e Pães", tags: ["padaria", "pao", "paes", "salgado", "doce de padaria", "suco natural de laranja", "doce de festa", "cuca"] },
-
-      // FASE 2: Parede dos Fundos (Esquerda -> Direita)
       { id: "acougue", order: 8, zone: "Fundos - Direita", name: "Açougue e Peixaria", tags: ["acougue", "carne", "carnes", "frango", "carne de porco", "porco", "peixe", "peixes", "picanha", "maminha", "costela", "alcatra", "moida"] },
       { id: "cama_mesa_banho", order: 9, zone: "Fundos - Extrema Direita", name: "Cama, Mesa e Banho", tags: ["roupa", "pijama", "roupa de cama", "travesseiro", "toalha", "coberta", "lençol"] },
-
-      // FASE 3: Miolo Central (Direita -> Esquerda)
       { id: "prataria", order: 10, zone: "Corredor Central - Extrema Direita", name: "Prataria e Cerâmicas", tags: ["prataria", "ceramica", "prato", "copo", "caneca", "talher", "panela", "decoracao"] },
       { id: "pet_ferragem", order: 11, zone: "Corredor Central - Direita", name: "Ferragem, Carro e Pet", tags: ["ferragem", "ferramenta", "oleo", "carro", "parafuso", "conserto", "racao", "gato", "cachorro", "pet"] },
       { id: "hortifruti", order: 12, zone: "Corredor Central - Meio", name: "Hortifruti e Flores", tags: ["hortifruti", "fruta", "verdura", "legume", "banana", "maca", "tomate", "cebola", "alho", "batata", "cenoura", "alface", "flores", "flor"] },
       { id: "cereais", order: 13, zone: "Corredor Central - Meio/Esquerda", name: "Cereais e Salgadinhos", tags: ["cereal", "barrinha", "barrinha de cereal", "sucrilhos", "chocolate", "salgadinho", "doritos", "cheetos", "fandangos", "bala", "bombom"] },
       { id: "molhos", order: 14, zone: "Corredor Central - Esquerda", name: "Molhos e Enlatados", tags: ["leite condensado", "molho", "extrato de tomate", "creme de leite", "leite em po", "enlatado", "milho", "ervilha", "sardinha", "atun", "tempero", "fermento", "pasta de amendoim"] },
-
-      // FASE 4: Frente / Linha de Caixas (Retorno à Entrada 1)
       { id: "eletronicos", order: 15, zone: "Frente - Extrema Direita", name: "Eletrônicos e Cigarros", tags: ["eletronico", "tv", "radio", "computador", "eletrodomestico", "geladeira", "isqueiro", "cigarro", "pilha"] },
       { id: "bazar", order: 16, zone: "Frente - Direita", name: "Bazar e Papelaria", tags: ["papelaria", "brinquedo", "camping", "praia", "churrasco", "pote", "pote de plastico", "pote de vidro", "carvao"] },
       { id: "higiene_limpeza", order: 17, zone: "Frente - Próximo aos Caixas", name: "Higiene e Limpeza", tags: ["sabonete", "papel higienico", "shampoo", "condicionador", "desodorante", "creme dental", "pasta de dente", "lenco umedecido", "agua sanitaria", "detergente", "sabao", "amaciante", "esponja", "pano", "limpeza"] },
@@ -102,6 +137,37 @@
     ];
 
     let items = [];
+
+    /* -------------------------------------------------------------
+       3. LÓGICA DE DADOS & PERSISTÊNCIA
+    ----------------------------------------------------------------- */
+    function saveItems() {
+      // Salva no localStorage do navegador local
+      localStorage.setItem('zaffari_items', JSON.stringify(items));
+      
+      // Se o Firebase estiver configurado, salva na nuvem para sync
+      if (useFirebase && dbRef) {
+        dbRef.set(items);
+      }
+    }
+
+    function loadItems() {
+      if (useFirebase && dbRef) {
+        // Escuta mudanças em tempo real do Firebase
+        dbRef.on('value', (snapshot) => {
+          const val = snapshot.val();
+          items = val ? val : [];
+          renderList();
+        });
+      } else {
+        // Carrega do localStorage local
+        const local = localStorage.getItem('zaffari_items');
+        if (local) {
+          items = JSON.parse(local);
+        }
+        renderList();
+      }
+    }
 
     function findSector(itemName) {
       const cleanInput = normalize(itemName);
@@ -119,9 +185,7 @@
           }
         }
       }
-
-      // Se não reconhecer, posiciona na Mercearia Seca (4)
-      return bestMatch || SECTORS[3];
+      return bestMatch || SECTORS[3]; // Padrão: Grãos
     }
 
     function addItem() {
@@ -132,17 +196,28 @@
       const sector = findSector(val);
       items.push({ id: Date.now(), name: val, sector: sector, checked: false });
       input.value = '';
+      saveItems();
       renderList();
     }
 
     function removeItem(id) {
       items = items.filter(i => i.id !== id);
+      saveItems();
       renderList();
+    }
+
+    function clearList() {
+      if (confirm("Tem certeza que deseja apagar toda a lista de compras?")) {
+        items = [];
+        saveItems();
+        renderList();
+      }
     }
 
     function renderList() {
       const listEl = document.getElementById('shopping-list');
       const btnStart = document.getElementById('btn-start');
+      const btnClear = document.getElementById('btn-clear');
       listEl.innerHTML = '';
 
       items.forEach(item => {
@@ -159,15 +234,15 @@
 
       if (items.length > 0) {
         btnStart.classList.remove('hidden');
+        btnClear.classList.remove('hidden');
       } else {
         btnStart.classList.add('hidden');
+        btnClear.classList.add('hidden');
       }
     }
 
     function startShopping() {
-      // Ordena rigorosamente segundo o circuito perimétrico otimizado
       items.sort((a, b) => a.sector.order - b.sector.order);
-
       document.getElementById('panel-edit').classList.add('hidden');
       document.getElementById('panel-route').classList.remove('hidden');
       renderRoute();
@@ -176,6 +251,7 @@
     function toggleCheck(id) {
       const item = items.find(i => i.id === id);
       if (item) item.checked = !item.checked;
+      saveItems();
       renderRoute();
     }
 
@@ -222,10 +298,14 @@
       }
     }
 
+    // Carregamento Inicial
     if (localStorage.getItem('theme') === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
       document.documentElement.classList.add('dark');
-      document.getElementById('theme-icon').innerText = '☀️';
+      document.getElementById('theme-icon').innerText = '☀️️';
     }
+
+    // Inicializar lista ao carregar a página
+    loadItems();
   </script>
 </body>
 </html>
