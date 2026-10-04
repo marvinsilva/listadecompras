@@ -18,7 +18,7 @@
     tailwind.config = { darkMode: 'class' }
   </script>
 
-  <!-- Firebase (CDN para Sincronização em Tempo Real) -->
+  <!-- Firebase CDN -->
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
 </head>
@@ -26,10 +26,17 @@
   <div class="max-w-md mx-auto p-4">
     
     <!-- Cabeçalho -->
-    <header class="mb-6 flex justify-between items-center">
+    <header class="mb-4 flex justify-between items-center">
       <div class="text-left">
         <h1 class="text-2xl font-bold text-red-600 dark:text-red-500">Zaffari Express</h1>
-        <p class="text-xs text-gray-500 dark:text-gray-400">Circuito Otimizado • Entrada 1</p>
+        <div class="flex items-center gap-2 mt-0.5">
+          <span id="list-id-tag" class="text-xs bg-red-100 dark:bg-red-900/40 text-red-700 dark:text-red-300 font-mono px-2 py-0.5 rounded">
+            Lista: ...
+          </span>
+          <button onclick="changeListId()" class="text-xs text-gray-500 dark:text-gray-400 hover:text-red-600 underline">
+            Trocar
+          </button>
+        </div>
       </div>
       <button onclick="toggleDarkMode()" class="p-2 rounded-lg bg-gray-200 dark:bg-gray-800 text-lg hover:opacity-80">
         <span id="theme-icon">🌙</span>
@@ -79,33 +86,56 @@
   </div>
 
   <script>
+    /* -------------------------------------------------------------
+       1. CÓDIGO DA LISTA (Identificador Único por Navegador/Celular)
+    ----------------------------------------------------------------- */
+    let currentListId = localStorage.getItem('zaffari_current_list_id');
     
-    const firebaseConfig = {
-    apiKey: "AIzaSyAhPZsHhHbCJ5zGmXE5rfEmBkzIkF9NcxM",
-    authDomain: "zaffari-express.firebaseapp.com",
-    databaseURL: "https://zaffari-express-default-rtdb.firebaseio.com",
-    projectId: "zaffari-express",
-    storageBucket: "zaffari-express.firebasestorage.app",
-    messagingSenderId: "557092628586",
-    appId: "1:557092628586:web:4406662f3559bd74ab0213"
-  };
+    if (!currentListId) {
+      currentListId = 'lista-' + Math.random().toString(36).substring(2, 7);
+      localStorage.setItem('zaffari_current_list_id', currentListId);
+    }
 
-    let useFirebase = false;
-    let dbRef = null;
+    function updateListDisplay() {
+      document.getElementById('list-id-tag').innerText = `Lista: ${currentListId}`;
+    }
 
-    // Inicializa Firebase apenas se a chave tiver sido configurada
-    if (firebaseConfig.apiKey !== "SUA_API_KEY") {
-      try {
-        firebase.initializeApp(firebaseConfig);
-        dbRef = firebase.database().ref('zaffari_shopping_list');
-        useFirebase = true;
-      } catch (e) {
-        console.warn("Erro ao conectar no Firebase. Usando apenas localStorage.", e);
+    function changeListId() {
+      const newId = prompt("Digite o nome ou código da lista que deseja usar:", currentListId);
+      if (newId && newId.trim() !== "") {
+        const cleanId = normalize(newId).replace(/\s+/g, '-');
+        currentListId = cleanId;
+        localStorage.setItem('zaffari_current_list_id', currentListId);
+        updateListDisplay();
+        initStorageAndFirebase();
       }
     }
 
     /* -------------------------------------------------------------
-       2. MAPEAMENTO DOS SETORES (Baseado na Imagem do Layout)
+       2. CREDENCIAIS REALTIME FIREBASE (Zaffari Express)
+    ----------------------------------------------------------------- */
+    const firebaseConfig = {
+      apiKey: "AIzaSyAhPZsHhHbCJ5zGmXE5rfEmBkzIkF9NcxM",
+      authDomain: "zaffari-express.firebaseapp.com",
+      databaseURL: "https://zaffari-express-default-rtdb.firebaseio.com",
+      projectId: "zaffari-express",
+      storageBucket: "zaffari-express.firebasestorage.app",
+      messagingSenderId: "557092628586",
+      appId: "1:557092628586:web:4406662f3559bd74ab0213"
+    };
+
+    let useFirebase = false;
+    let dbRef = null;
+
+    try {
+      firebase.initializeApp(firebaseConfig);
+      useFirebase = true;
+    } catch (e) {
+      console.warn("Erro ao inicializar Firebase. Operando via localStorage.", e);
+    }
+
+    /* -------------------------------------------------------------
+       3. MAPEAMENTO DOS SETORES DA LOJA
     ----------------------------------------------------------------- */
     function normalize(text) {
       return text.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim();
@@ -135,32 +165,30 @@
     let items = [];
 
     /* -------------------------------------------------------------
-       3. LÓGICA DE DADOS & PERSISTÊNCIA
+       4. OPERAÇÕES DE BANCO DE DADOS E SINCRONIZAÇÃO
     ----------------------------------------------------------------- */
     function saveItems() {
-      // Salva no localStorage do navegador local
-      localStorage.setItem('zaffari_items', JSON.stringify(items));
-      
-      // Se o Firebase estiver configurado, salva na nuvem para sync
+      localStorage.setItem(`zaffari_items_${currentListId}`, JSON.stringify(items));
       if (useFirebase && dbRef) {
         dbRef.set(items);
       }
     }
 
-    function loadItems() {
-      if (useFirebase && dbRef) {
-        // Escuta mudanças em tempo real do Firebase
+    function initStorageAndFirebase() {
+      updateListDisplay();
+
+      if (useFirebase) {
+        if (dbRef) dbRef.off();
+        dbRef = firebase.database().ref(`lists/${currentListId}`);
+        
         dbRef.on('value', (snapshot) => {
           const val = snapshot.val();
           items = val ? val : [];
           renderList();
         });
       } else {
-        // Carrega do localStorage local
-        const local = localStorage.getItem('zaffari_items');
-        if (local) {
-          items = JSON.parse(local);
-        }
+        const local = localStorage.getItem(`zaffari_items_${currentListId}`);
+        items = local ? JSON.parse(local) : [];
         renderList();
       }
     }
@@ -181,7 +209,7 @@
           }
         }
       }
-      return bestMatch || SECTORS[3]; // Padrão: Grãos
+      return bestMatch || SECTORS[3];
     }
 
     function addItem() {
@@ -203,7 +231,7 @@
     }
 
     function clearList() {
-      if (confirm("Tem certeza que deseja apagar toda a lista de compras?")) {
+      if (confirm(`Tem certeza que deseja apagar a lista "${currentListId}"?`)) {
         items = [];
         saveItems();
         renderList();
@@ -294,14 +322,13 @@
       }
     }
 
-    // Carregamento Inicial
+    // Inicialização do Tema e Dados
     if (localStorage.getItem('theme') === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
       document.documentElement.classList.add('dark');
-      document.getElementById('theme-icon').innerText = '☀️️';
+      document.getElementById('theme-icon').innerText = '☀️';
     }
 
-    // Inicializar lista ao carregar a página
-    loadItems();
+    initStorageAndFirebase();
   </script>
 </body>
 </html>
