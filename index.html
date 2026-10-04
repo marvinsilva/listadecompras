@@ -45,12 +45,17 @@
 
     <!-- Painel 1: Edição da Lista -->
     <div id="panel-edit" class="bg-white dark:bg-gray-800 rounded-xl shadow-md p-4 mb-6 transition-colors">
-      <h2 class="text-lg font-semibold mb-3">Lista de Compras</h2>
+      <div class="flex justify-between items-center mb-3">
+        <h2 class="text-lg font-semibold">Lista de Compras</h2>
+        <button id="mic-btn" onclick="startVoiceRecognition()" class="text-xs bg-red-50 dark:bg-red-900/30 text-red-600 dark:text-red-400 border border-red-200 dark:border-red-800 hover:bg-red-100 px-2.5 py-1 rounded font-medium transition flex items-center gap-1">
+          <span id="mic-icon">🎙️</span> <span id="mic-text">Ditar</span>
+        </button>
+      </div>
       
       <div class="flex gap-2 mb-4">
         <input type="text" id="item-input" 
                onkeydown="if(event.key === 'Enter') addItem()"
-               placeholder="Ex: sabonete, pão, carne, leite..." 
+               placeholder="Digite um item ou cole uma lista inteira..." 
                class="flex-1 border dark:border-gray-700 bg-gray-50 dark:bg-gray-900 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-red-500">
         <button onclick="addItem()" class="bg-red-600 hover:bg-red-700 text-white font-semibold px-4 py-2 rounded-lg text-sm transition">
           + Add
@@ -87,7 +92,7 @@
 
   <script>
     /* -------------------------------------------------------------
-       1. CÓDIGO DA LISTA (Identificador Único por Navegador/Celular)
+       1. CÓDIGO DA LISTA
     ----------------------------------------------------------------- */
     let currentListId = localStorage.getItem('zaffari_current_list_id');
     
@@ -112,7 +117,7 @@
     }
 
     /* -------------------------------------------------------------
-       2. CREDENCIAIS REALTIME FIREBASE (Zaffari Express)
+       2. CREDENCIAIS REALTIME FIREBASE
     ----------------------------------------------------------------- */
     const firebaseConfig = {
       apiKey: "AIzaSyAhPZsHhHbCJ5zGmXE5rfEmBkzIkF9NcxM",
@@ -165,7 +170,7 @@
     let items = [];
 
     /* -------------------------------------------------------------
-       4. OPERAÇÕES DE BANCO DE DADOS E SINCRONIZAÇÃO
+       4. PERSISTÊNCIA & FIREBASE
     ----------------------------------------------------------------- */
     function saveItems() {
       localStorage.setItem(`zaffari_items_${currentListId}`, JSON.stringify(items));
@@ -183,7 +188,23 @@
         
         dbRef.on('value', (snapshot) => {
           const val = snapshot.val();
-          items = val ? val : [];
+          if (!val) {
+            items = [];
+          } else if (Array.isArray(val)) {
+            items = val;
+          } else {
+            items = Object.keys(val).map(key => ({
+              id: val[key].id || key,
+              ...val[key]
+            }));
+          }
+
+          items.forEach(item => {
+            if (!item.sector) {
+              item.sector = findSector(item.name);
+            }
+          });
+
           renderList();
         });
       } else {
@@ -212,20 +233,100 @@
       return bestMatch || SECTORS[3];
     }
 
+    /* -------------------------------------------------------------
+       5. PROCESSAMENTO DE TEXTO (INDIVIDUAL OU MÚLTIPLOS ITENS)
+    ----------------------------------------------------------------- */
+    function processBulkText(text) {
+      if (!text || !text.trim()) return;
+
+      const rawItems = text.split(/[\n,]+/);
+      let addedCount = 0;
+
+      rawItems.forEach(raw => {
+        // Limpa marcadores (hífens, bolinhas, números como "1.", etc.)
+        let cleanName = raw.replace(/^[\s\-\•\*\-\–\[\]\d\.\)\:]+/, '').trim();
+
+        if (cleanName.length > 0) {
+          const sector = findSector(cleanName);
+          items.push({ id: Date.now() + Math.random(), name: cleanName, sector: sector, checked: false });
+          addedCount++;
+        }
+      });
+
+      if (addedCount > 0) {
+        saveItems();
+        renderList();
+      }
+    }
+
     function addItem() {
       const input = document.getElementById('item-input');
       const val = input.value.trim();
       if (!val) return;
 
-      const sector = findSector(val);
-      items.push({ id: Date.now(), name: val, sector: sector, checked: false });
+      processBulkText(val);
       input.value = '';
-      saveItems();
-      renderList();
+    }
+
+    // CAPTURA O EVENTO DE COLAR (PASTE) NA BARRA DE ENTRADA
+    document.addEventListener('DOMContentLoaded', () => {
+      const inputEl = document.getElementById('item-input');
+      inputEl.addEventListener('paste', (event) => {
+        const pastedText = (event.clipboardData || window.clipboardData).getData('text');
+        
+        // Se o texto tiver quebra de linha ou vírgulas, processa tudo automaticamente
+        if (pastedText && (pastedText.includes('\n') || pastedText.includes(','))) {
+          event.preventDefault();
+          processBulkText(pastedText);
+          inputEl.value = '';
+        }
+      });
+    });
+
+    /* -------------------------------------------------------------
+       6. DITAR POR VOZ (NATIVO DO NAVEGADOR)
+    ----------------------------------------------------------------- */
+    function startVoiceRecognition() {
+      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+      
+      if (!SpeechRecognition) {
+        alert("O reconhecimento de voz não é suportado pelo seu navegador. Tente pelo Chrome ou Safari.");
+        return;
+      }
+
+      const recognition = new SpeechRecognition();
+      recognition.lang = 'pt-BR';
+      recognition.continuous = false;
+      recognition.interimResults = false;
+
+      const micBtn = document.getElementById('mic-btn');
+      const micText = document.getElementById('mic-text');
+      const micIcon = document.getElementById('mic-icon');
+
+      micText.innerText = "Ouvindo...";
+      micIcon.innerText = "🔴";
+      micBtn.classList.add("animate-pulse");
+
+      recognition.start();
+
+      recognition.onresult = (event) => {
+        const spokenText = event.results[0][0].transcript;
+        processBulkText(spokenText);
+      };
+
+      recognition.onerror = () => {
+        alert("Não foi possível ouvir a sua voz. Tente novamente.");
+      };
+
+      recognition.onend = () => {
+        micText.innerText = "Ditar";
+        micIcon.innerText = "🎙️";
+        micBtn.classList.remove("animate-pulse");
+      };
     }
 
     function removeItem(id) {
-      items = items.filter(i => i.id !== id);
+      items = items.filter(i => String(i.id) !== String(id));
       saveItems();
       renderList();
     }
@@ -249,9 +350,9 @@
           <li class="py-2.5 flex justify-between items-center text-sm">
             <span>
               <strong>${item.name}</strong> 
-              <span class="text-xs text-gray-400 dark:text-gray-500 block">Setor: ${item.sector.name}</span>
+              <span class="text-xs text-gray-400 dark:text-gray-500 block">Setor: ${item.sector ? item.sector.name : 'Outros'}</span>
             </span>
-            <button onclick="removeItem(${item.id})" class="text-red-500 hover:text-red-700 text-xs px-2 py-1">Excluir</button>
+            <button onclick="removeItem('${item.id}')" class="text-red-500 hover:text-red-700 text-xs px-2 py-1">Excluir</button>
           </li>
         `;
       });
@@ -266,14 +367,14 @@
     }
 
     function startShopping() {
-      items.sort((a, b) => a.sector.order - b.sector.order);
+      items.sort((a, b) => (a.sector ? a.sector.order : 4) - (b.sector ? b.sector.order : 4));
       document.getElementById('panel-edit').classList.add('hidden');
       document.getElementById('panel-route').classList.remove('hidden');
       renderRoute();
     }
 
     function toggleCheck(id) {
-      const item = items.find(i => i.id === id);
+      const item = items.find(i => String(i.id) === String(id));
       if (item) item.checked = !item.checked;
       saveItems();
       renderRoute();
@@ -285,15 +386,18 @@
 
       items.forEach((item, index) => {
         const isChecked = item.checked;
+        const sectorName = item.sector ? item.sector.name : 'Grãos e Mercearia';
+        const sectorZone = item.sector ? item.sector.zone : 'Frente - Esquerda';
+
         routeEl.innerHTML += `
-          <div onclick="toggleCheck(${item.id})" class="p-3.5 rounded-lg border cursor-pointer transition ${isChecked ? 'bg-gray-100 dark:bg-gray-900 border-gray-200 dark:border-gray-800 opacity-50' : 'bg-red-50 dark:bg-gray-700/50 border-red-200 dark:border-gray-600 shadow-sm'}">
+          <div onclick="toggleCheck('${item.id}')" class="p-3.5 rounded-lg border cursor-pointer transition ${isChecked ? 'bg-gray-100 dark:bg-gray-900 border-gray-200 dark:border-gray-800 opacity-50' : 'bg-red-50 dark:bg-gray-700/50 border-red-200 dark:border-gray-600 shadow-sm'}">
             <div class="flex items-center justify-between">
               <div>
                 <span class="text-xs font-bold ${isChecked ? 'text-gray-400' : 'text-red-600 dark:text-red-400'}">
-                  Passo ${index + 1} • ${item.sector.zone}
+                  Passo ${index + 1} • ${sectorZone}
                 </span>
                 <p class="text-base font-semibold ${isChecked ? 'line-through text-gray-400' : 'text-gray-900 dark:text-gray-100'}">
-                  ${item.name} <span class="text-xs font-normal text-gray-500 dark:text-gray-400">(${item.sector.name})</span>
+                  ${item.name} <span class="text-xs font-normal text-gray-500 dark:text-gray-400">(${sectorName})</span>
                 </p>
               </div>
               <input type="checkbox" ${isChecked ? 'checked' : ''} class="h-5 w-5 text-red-600 rounded">
@@ -322,7 +426,6 @@
       }
     }
 
-    // Inicialização do Tema e Dados
     if (localStorage.getItem('theme') === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
       document.documentElement.classList.add('dark');
       document.getElementById('theme-icon').innerText = '☀️';
