@@ -1,438 +1,306 @@
 <!DOCTYPE html>
-<html lang="pt-BR" class="light">
+<html lang="pt-BR">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>Zaffari Express Route</title>
-
-  <!-- PWA & Favicon para iOS / Safari -->
-  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🛒</text></svg>">
-  <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/3144/3144456.png">
-  <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="default">
-  <meta name="apple-mobile-web-app-title" content="Zaffari Route">
-
-  <!-- Tailwind CSS -->
-  <script src="https://cdn.tailwindcss.com"></script>
-  <script>
-    tailwind.config = { darkMode: 'class' }
-  </script>
-
-  <!-- Firebase CDN -->
-  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Zaffari Express Route</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🛒</text></svg>">
+<link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/3144/3144456.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Zaffari Route">
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600;12..96,800&display=swap" rel="stylesheet">
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+<style>
+:root{--bg:#eef1ee;--sf:#fff;--ink:#1b2a2f;--mu:#5c6b70;--ln:#d6ddd9;--rd:#c8102e;--rds:#fbe3e7;--gn:#2e7d5b;--gns:#dff1e8;--sh:#dfe5e1}
+:root.dark{--bg:#101619;--sf:#172126;--ink:#e8efec;--mu:#93a4a8;--ln:#263439;--rd:#ff5d73;--rds:#3a1c22;--gn:#5cc79a;--gns:#17352b;--sh:#1d2a2f}
+*{box-sizing:border-box;margin:0}
+body{font-family:'Bricolage Grotesque',system-ui,sans-serif;background:var(--bg);color:var(--ink);padding:env(safe-area-inset-top) 0 60px;-webkit-text-size-adjust:100%}
+button,select,input{font:inherit;color:inherit;touch-action:manipulation}
+button{cursor:pointer;border:0;background:none}
+.w{max-width:460px;margin:0 auto;padding:14px}
+header{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px}
+h1{font-size:26px;font-weight:800;letter-spacing:-.02em;color:var(--rd)}
+.tag{font-size:12px;color:var(--mu)}.tag b{font-weight:600;color:var(--ink)}.tag button{text-decoration:underline;color:var(--mu);font-size:12px;padding:4px}
+.ic{width:42px;height:42px;border-radius:12px;background:var(--sf);border:1px solid var(--ln);font-size:18px}
+.card{background:var(--sf);border:1px solid var(--ln);border-radius:14px;padding:14px;margin-bottom:12px}
+.row{display:flex;gap:8px;align-items:center}
+.bar{display:flex;gap:8px;margin-bottom:12px}
+input[type=text]{flex:1;min-width:0;height:46px;border:1px solid var(--ln);background:var(--bg);border-radius:10px;padding:0 12px;font-size:16px}
+input[type=text]:focus,select:focus,button:focus-visible{outline:2px solid var(--rd);outline-offset:1px}
+.btn{height:46px;padding:0 16px;border-radius:10px;background:var(--rd);color:#fff;font-weight:600}
+.btn.g{background:var(--gn);color:#fff;width:100%;height:52px;font-size:17px;font-weight:800}
+.btn.s{background:var(--sh);color:var(--ink)}
+.mic{height:46px;width:46px;border-radius:10px;background:var(--rds);font-size:18px}
+.mic.on{animation:pl 1s infinite}@keyframes pl{50%{opacity:.4}}
+.it{display:flex;justify-content:space-between;gap:8px;align-items:center;padding:10px 0;border-top:1px solid var(--ln)}
+.it:first-child{border-top:0}.it strong{font-weight:600;display:block;margin-bottom:4px}
+.pill{max-width:210px;font-size:12px;padding:5px 8px;border-radius:99px;border:1px solid var(--ln);background:var(--sh);appearance:none;-webkit-appearance:none}
+.pill.warn{background:var(--rds);border-color:var(--rd);color:var(--rd);font-weight:600}
+.x{color:var(--mu);font-size:22px;width:40px;height:40px}
+.empty{color:var(--mu);text-align:center;padding:18px 8px;font-size:15px}
+.map{padding:8px;margin-bottom:0}
+.map svg{display:block;width:100%;height:auto}
+.map text{font-family:inherit;pointer-events:none}
+.nx{position:sticky;top:0;z-index:5;margin:8px -4px 12px;padding:10px 12px;border-radius:12px;background:var(--rd);color:#fff;display:flex;gap:10px;align-items:center;box-shadow:0 4px 14px #0003}
+.nx.ok{background:var(--gn)}
+.nx .n{width:34px;height:34px;border-radius:50%;background:#fff;color:var(--rd);font-weight:800;display:grid;place-items:center;flex:none}
+.nx.ok .n{color:var(--gn)}.nx small{opacity:.85;font-size:12px;display:block}.nx b{font-size:17px;line-height:1.15}
+.stop{padding:0;overflow:hidden;scroll-margin-top:76px}
+.stop.cur{border:2px solid var(--rd)}.stop.done{background:var(--gns);border-color:transparent}
+.sh{display:flex;gap:10px;align-items:center;width:100%;padding:12px 14px;text-align:left}
+.bd{width:30px;height:30px;border-radius:50%;background:var(--rd);color:#fff;font-weight:800;display:grid;place-items:center;flex:none;font-size:14px}
+.done .bd{background:var(--gn)}.sh span{flex:1}.sh b{display:block;font-weight:600}.sh small{color:var(--mu);font-size:12px}
+.ck{display:flex;gap:12px;align-items:center;padding:13px 14px;border-top:1px solid var(--ln);font-size:17px;cursor:pointer}
+.ck input{width:24px;height:24px;accent-color:var(--gn);flex:none}
+.ck.d span{text-decoration:line-through;color:var(--mu)}
+.fin{text-align:center;color:var(--mu);font-size:14px;padding:6px 10px 14px}
+.hide{display:none!important}
+@media(prefers-reduced-motion:reduce){*{animation:none!important}}
+</style>
 </head>
-<body id="app-body" class="bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-100 min-h-screen pb-12 transition-colors duration-200">
-  <div class="max-w-md mx-auto p-4">
-    
-    <!-- Cabeçalho -->
-    <header class="mb-4 flex justify-between items-center">
-      <div class="text-left">
-        <h1 class="text-2xl font-bold text-red-600 dark:text-red-500">Zaffari Express</h1>
-        <div class="flex items-center gap-2 mt-0.5">
-          <span id="list-id-tag" class="text-xs bg-red-100 dark:bg-red-900/40 text-red-700 dark:text-red-300 font-mono px-2 py-0.5 rounded">
-            Lista: ...
-          </span>
-          <button onclick="changeListId()" class="text-xs text-gray-500 dark:text-gray-400 hover:text-red-600 underline">
-            Trocar
-          </button>
-        </div>
-      </div>
-      <button onclick="toggleDarkMode()" class="p-2 rounded-lg bg-gray-200 dark:bg-gray-800 text-lg hover:opacity-80">
-        <span id="theme-icon">🌙</span>
-      </button>
-    </header>
+<body>
+<div class="w">
+  <header>
+    <div><h1>Zaffari Express</h1><div class="tag"><b id="lid"></b> <button onclick="changeList()">trocar lista</button></div></div>
+    <button class="ic" id="theme" onclick="toggleTheme()" aria-label="Alternar tema">🌙</button>
+  </header>
 
-    <!-- Painel 1: Edição da Lista -->
-    <div id="panel-edit" class="bg-white dark:bg-gray-800 rounded-xl shadow-md p-4 mb-6 transition-colors">
-      <div class="flex justify-between items-center mb-3">
-        <h2 class="text-lg font-semibold">Lista de Compras</h2>
-        <button id="mic-btn" onclick="startVoiceRecognition()" class="text-xs bg-red-50 dark:bg-red-900/30 text-red-600 dark:text-red-400 border border-red-200 dark:border-red-800 hover:bg-red-100 px-2.5 py-1 rounded font-medium transition flex items-center gap-1">
-          <span id="mic-icon">🎙️</span> <span id="mic-text">Ditar</span>
-        </button>
-      </div>
-      
-      <div class="flex gap-2 mb-4">
-        <input type="text" id="item-input" 
-               onkeydown="if(event.key === 'Enter') addItem()"
-               placeholder="Digite um item ou cole uma lista inteira..." 
-               class="flex-1 border dark:border-gray-700 bg-gray-50 dark:bg-gray-900 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-red-500">
-        <button onclick="addItem()" class="bg-red-600 hover:bg-red-700 text-white font-semibold px-4 py-2 rounded-lg text-sm transition">
-          + Add
-        </button>
-      </div>
-
-      <ul id="shopping-list" class="divide-y divide-gray-100 dark:divide-gray-700 mb-4">
-        <!-- Itens inseridos aparecem aqui -->
-      </ul>
-
-      <div class="flex gap-2">
-        <button id="btn-start" onclick="startShopping()" class="flex-1 bg-green-600 hover:bg-green-700 text-white font-bold py-3 rounded-lg text-center hidden shadow transition">
-          🚀 Iniciar Compras (Gerar Rota)
-        </button>
-        <button id="btn-clear" onclick="clearList()" class="bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-300 font-semibold px-3 py-3 rounded-lg text-xs hidden hover:bg-red-100 hover:text-red-600">
-          Limpar Tudo
-        </button>
+  <section id="edit">
+    <div class="card">
+      <div class="bar" style="margin-bottom:0">
+        <input type="text" id="inp" placeholder="Item ou lista inteira (separe por vírgula)" enterkeyhint="done">
+        <button class="mic" id="mic" onclick="listen()" aria-label="Ditar">🎙️</button>
+        <button class="btn" onclick="add()">Add</button>
       </div>
     </div>
+    <div class="card" id="list"></div>
+    <button class="btn g hide" id="go" onclick="start()">Gerar rota</button>
+    <button class="btn s hide" id="clr" onclick="clearAll()" style="width:100%;margin-top:8px">Limpar lista</button>
+  </section>
 
-    <!-- Painel 2: Modo Compras / Rota -->
-    <div id="panel-route" class="bg-white dark:bg-gray-800 rounded-xl shadow-md p-4 hidden transition-colors">
-      <div class="flex justify-between items-center mb-4 border-b dark:border-gray-700 pb-2">
-        <h2 class="text-lg font-semibold text-green-600 dark:text-green-400">Rota Otimizada</h2>
-        <button onclick="resetApp()" class="text-xs text-gray-500 hover:text-red-500 underline">Editar Lista</button>
-      </div>
+  <section id="route" class="hide">
+    <div class="card map" id="map"></div>
+    <div class="nx" id="nx"></div>
+    <div id="stops"></div>
+    <div class="row" style="gap:8px"><button class="btn s" style="flex:1" onclick="mode('edit')">Editar lista</button><button class="btn s" style="flex:1" onclick="uncheckAll()">Desmarcar tudo</button></div>
+  </section>
+</div>
 
-      <div id="route-steps" class="space-y-3">
-        <!-- Passos gerados via JS -->
-      </div>
-    </div>
+<script>
+/* ---------- LOJA: setores, posições (px do croqui 780x440), "tier" e palavras-chave ---------- */
+// tier: 1 pesado/durável · 2 neutro · 3 frágil · 4 refrigerado · 5 congelado (vai por último)
+const RAW=[
+["frios","Frios e Queijos","Frios","Fundos · esquerda",[8,14,190,100],4,"linguicinha|linguica|bacon|salame|queijo|frios|presunto|peito de peru|mortadela|salsicha|mussarela|parmesao|apresuntado"],
+["padaria","Padaria e Pães","Padaria","Fundos · centro-esquerda",[202,14,222,100],3,"padaria|pao|paes|pao de queijo|salgado|doce de padaria|suco natural|doce de festa|cuca|bolo|sonho|croissant"],
+["acougue","Açougue e Peixaria","Açougue","Fundos · centro-direita",[428,14,146,100],4,"acougue|carne|frango|porco|peixe|picanha|maminha|costela|alcatra|moida|bife|file|coxa|hamburguer|salmao|tilapia|camarao"],
+["cama","Cama, Mesa e Banho","Cama/banho","Fundos · direita",[578,14,194,100],2,"roupa|pijama|roupa de cama|travesseiro|toalha|coberta|cobertor|lencol|meia|cueca|calcinha|camiseta|edredom|fronha|cortina"],
+["laticinios","Laticínios e Manteigas","Laticínios","Meio · esquerda",[8,122,100,124],4,"iogurte|requeijao|margarina|manteiga|yakult|leite fermentado|nata|cream cheese"],
+["leite_ovos","Leite e Ovos","Leite/ovos","Meio · esquerda",[112,122,64,124],4,"leite|ovo|leite integral|leite desnatado"],
+["molhos","Molhos, Enlatados e Temperos","Molhos","Meio · centro-esquerda",[180,122,76,124],1,"leite condensado|molho|extrato de tomate|massa de tomate|creme de leite|leite em po|leite de coco|enlatado|milho|ervilha|sardinha|atum|tempero|fermento|pasta de amendoim|ketchup|maionese|mostarda|azeite|oleo de soja|vinagre|azeitona|palmito"],
+["cereais","Cereais, Chocolates e Salgadinhos","Cereais","Meio · centro",[260,122,82,124],3,"cereal|barrinha|sucrilhos|chocolate|salgadinho|doritos|cheetos|fandangos|bala|bombom|granola|chiclete|pipoca|batata chips"],
+["horti","Hortifruti e Flores","Hortifruti","Meio · centro",[346,122,84,124],3,"hortifruti|fruta|verdura|legume|banana|maca|tomate|cebola|alho|batata|cenoura|alface|flor|laranja|limao|mamao|abacaxi|melancia|uva|morango|pera|abobora|pepino|pimentao|brocolis|couve|repolho|rucula|beterraba|aipim|mandioca|cheiro verde|salsinha"],
+["ferragem","Ferragem, Carro e Pet","Ferragem/pet","Meio · direita",[434,122,140,124],1,"ferragem|ferramenta|oleo|carro|parafuso|conserto|racao|gato|cachorro|pet|torneira|tinta|fita isolante|extensao|areia higienica|petisco"],
+["prataria","Prataria e Cerâmicas","Prataria","Meio · extrema direita",[578,122,194,124],1,"prataria|ceramica|prato|copo|caneca|talher|panela|decoracao|tigela|travessa|xicara|jarra"],
+["bebidas","Bebidas","Bebidas","Frente · entrada 1",[8,254,80,76],1,"bebida|refrigerante|agua|suco|cerveja|vinho|espumante|energetico|guarana|coca cola|whisky|vodka|agua de coco|isotonico"],
+["gelados","Sorvetes e Gelo","Gelados","Frente · entrada 1",[8,334,80,68],5,"sorvete|gelo|picole|acai"],
+["graos","Grãos e Mercearia Seca","Grãos","Frente · esquerda",[92,254,84,144],1,"arroz|feijao|farinha|acucar|sal|achocolatado|nescau|toddy|graos|farofa|lentilha|grao de bico|fuba|aveia"],
+["biscoitos","Biscoitos, Café e Massas","Biscoitos/café","Frente · centro-esquerda",[180,254,72,144],2,"biscoito|bolacha|cafe|massa|macarrao|erva mate|chimarrao|spaghetti|miojo|torrada|cha"],
+["doces","Doces em Compota e Gelatinas","Doces","Frente · centro",[256,254,86,144],2,"doce|compota|mumu|doce de leite|bolo pronto|gelatina|pudim|goiabada|geleia"],
+["higiene","Higiene e Limpeza","Higiene","Frente · perto dos caixas",[346,254,138,144],1,"sabonete|papel higienico|shampoo|condicionador|desodorante|creme dental|pasta de dente|escova de dente|lenco umedecido|agua sanitaria|detergente|sabao|amaciante|esponja|pano|limpeza|desinfetante|absorvente|fralda|cotonete|alcool|saco de lixo|papel toalha|guardanapo|cloro"],
+["bazar","Bazar e Papelaria","Bazar","Frente · centro-direita",[488,254,86,144],2,"papelaria|caderno|caneta|lapis|cola|brinquedo|camping|praia|churrasco|carvao|pote|pote de plastico|pote de vidro|espeto|bola"],
+["eletro","Eletrônicos","Eletrônicos","Frente · direita",[578,254,194,86],1,"eletronico|tv|radio|computador|eletrodomestico|geladeira|pilha|fone|carregador|ventilador|liquidificador|microondas|airfryer"],
+["cigarros","Isqueiro e Cigarros","Cigarros","Frente · direita",[578,344,194,54],2,"isqueiro|cigarro|fumo|tabaco"]
+];
+const SEC=RAW.map(([id,name,short,zone,r,tier,t])=>({id,name,short,zone,r,tier,x:r[0]+r[2]/2,y:r[1]+r[3]/2,
+  tags:t.split('|').map(g=>({len:g.length,re:new RegExp('(^| )'+g+'(s|es)?( |$)')}))}));
+const BY=Object.fromEntries(SEC.map(s=>[s.id,s]));
+const ST=[48,420];            // entrada 1
+const CX=[92,492,420];        // caixas: x mín, x máx, y
+const W=20;                   // custo (em px) de cada "inversão" de prioridade (ex.: frios antes de arroz)
 
-  </div>
+const norm=t=>t.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9 ]/g,' ').replace(/\s+/g,' ').trim();
+function find(name){
+  const q=norm(name);let best=null,L=0;
+  for(const s of SEC)for(const t of s.tags)if(t.len>L&&t.re.test(q)){L=t.len;best=s}
+  return best;
+}
 
-  <script>
-    /* -------------------------------------------------------------
-       1. CÓDIGO DA LISTA
-    ----------------------------------------------------------------- */
-    let currentListId = localStorage.getItem('zaffari_current_list_id');
-    
-    if (!currentListId) {
-      currentListId = 'lista-' + Math.random().toString(36).substring(2, 7);
-      localStorage.setItem('zaffari_current_list_id', currentListId);
-    }
-
-    function updateListDisplay() {
-      document.getElementById('list-id-tag').innerText = `Lista: ${currentListId}`;
-    }
-
-    function changeListId() {
-      const newId = prompt("Digite o nome ou código da lista que deseja usar:", currentListId);
-      if (newId && newId.trim() !== "") {
-        const cleanId = normalize(newId).replace(/\s+/g, '-');
-        currentListId = cleanId;
-        localStorage.setItem('zaffari_current_list_id', currentListId);
-        updateListDisplay();
-        initStorageAndFirebase();
+/* ---------- ROTA: caminho mais curto (exato, Held-Karp) + prioridades ---------- */
+function plan(list){
+  const n=list.length;if(n<2)return list.slice();
+  const d=(a,b)=>Math.abs(list[a].x-list[b].x)+Math.abs(list[a].y-list[b].y);
+  const ds=a=>Math.abs(list[a].x-ST[0])+Math.abs(list[a].y-ST[1]);
+  const de=a=>{const x=list[a].x;return Math.abs(x-Math.min(Math.max(x,CX[0]),CX[1]))+Math.abs(CX[2]-list[a].y)};
+  const tr=list.map(s=>s.tier);
+  if(n>16){ // fallback guloso (listas gigantes)
+    const left=new Set(list.map((_,i)=>i)),o=[];let c=-1;
+    while(left.size){let b=-1,bc=1e9;for(const k of left){const v=(c<0?ds(k):d(c,k))+W*tr[k]*2;if(v<bc){bc=v;b=k}}o.push(b);left.delete(b);c=b}
+    return o.map(i=>list[i]);
+  }
+  const N=1<<n,F=N-1,dp=new Float64Array(N*n).fill(Infinity),par=new Int8Array(N*n).fill(-1);
+  const pb=m=>{const c=[0,0,0,0,0,0];for(let i=0;i<n;i++)if(!(m>>i&1))c[tr[i]]++;
+    const p=[0,0,0,0,0,0];for(let T=2;T<=5;T++)for(let t=1;t<T;t++)p[T]+=W*c[t]*(T-t);return p};
+  const p0=pb(0);for(let j=0;j<n;j++)dp[(1<<j)*n+j]=ds(j)+p0[tr[j]]-0; // j primeiro: penaliza quem é mais "alto" que os demais
+  for(let m=1;m<F;m++){
+    const p=pb(m);
+    for(let j=0;j<n;j++){
+      if(!(m>>j&1))continue;const cur=dp[m*n+j];if(cur===Infinity)continue;
+      for(let k=0;k<n;k++){
+        if(m>>k&1)continue;const nm=m|1<<k,c=cur+d(j,k)+p[tr[k]];
+        if(c<dp[nm*n+k]){dp[nm*n+k]=c;par[nm*n+k]=j}
       }
     }
+  }
+  let bj=0,bc=Infinity;for(let j=0;j<n;j++){const c=dp[F*n+j]+de(j);if(c<bc){bc=c;bj=j}}
+  const o=[];for(let m=F,j=bj;j>=0;){o.push(j);const p=par[m*n+j];m^=1<<j;j=p}
+  return o.reverse().map(i=>list[i]);
+}
 
-    /* -------------------------------------------------------------
-       2. CREDENCIAIS REALTIME FIREBASE
-    ----------------------------------------------------------------- */
-    const firebaseConfig = {
-      apiKey: "AIzaSyAhPZsHhHbCJ5zGmXE5rfEmBkzIkF9NcxM",
-      authDomain: "zaffari-express.firebaseapp.com",
-      databaseURL: "https://zaffari-express-default-rtdb.firebaseio.com",
-      projectId: "zaffari-express",
-      storageBucket: "zaffari-express.firebasestorage.app",
-      messagingSenderId: "557092628586",
-      appId: "1:557092628586:web:4406662f3559bd74ab0213"
-    };
+/* ---------- ESTADO + FIREBASE ---------- */
+const $=id=>document.getElementById(id);
+const esc=s=>s.replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+let listId=localStorage.getItem('zaffari_current_list_id')||('lista-'+Math.random().toString(36).slice(2,7));
+localStorage.setItem('zaffari_current_list_id',listId);
+let items=[],view='edit',useFb=false,ref=null,first=true;
+const secOf=it=>it.manual?BY[it.manual]:find(it.name);
+const firebaseConfig={apiKey:"AIzaSyAhPZsHhHbCJ5zGmXE5rfEmBkzIkF9NcxM",authDomain:"zaffari-express.firebaseapp.com",databaseURL:"https://zaffari-express-default-rtdb.firebaseio.com",projectId:"zaffari-express",storageBucket:"zaffari-express.firebasestorage.app",messagingSenderId:"557092628586",appId:"1:557092628586:web:4406662f3559bd74ab0213"};
+try{firebase.initializeApp(firebaseConfig);useFb=true}catch(e){console.warn('Sem Firebase, usando localStorage',e)}
 
-    let useFirebase = false;
-    let dbRef = null;
+function save(){
+  const clean=JSON.parse(JSON.stringify(items.map(({id,name,manual,checked})=>({id,name,manual:manual||null,checked:!!checked}))));
+  localStorage.setItem('zaffari_items_'+listId,JSON.stringify(clean));
+  if(useFb&&ref)ref.set(clean);
+}
+function init(){
+  $('lid').textContent=listId;
+  const local=()=>{try{return JSON.parse(localStorage.getItem('zaffari_items_'+listId))||[]}catch(e){return[]}};
+  if(!useFb){items=local();render();return}
+  if(ref)ref.off();first=true;
+  ref=firebase.database().ref('lists/'+listId);
+  ref.on('value',snap=>{
+    const v=snap.val();
+    items=!v?[]:(Array.isArray(v)?v:Object.values(v)).filter(Boolean).map(i=>({...i,id:String(i.id)}));
+    if(first&&!items.length){items=local();if(items.length)save()}
+    first=false;render();
+  });
+}
+function changeList(){
+  const v=prompt('Nome ou código da lista:',listId);
+  if(v&&v.trim()){listId=norm(v).replace(/ /g,'-');localStorage.setItem('zaffari_current_list_id',listId);init()}
+}
 
-    try {
-      firebase.initializeApp(firebaseConfig);
-      useFirebase = true;
-    } catch (e) {
-      console.warn("Erro ao inicializar Firebase. Operando via localStorage.", e);
-    }
+/* ---------- ITENS ---------- */
+function addText(text,voice){
+  const parts=text.split(voice?/[\n,;]+|\s+e\s+/:/[\n,;]+/);let n=0;
+  for(const raw of parts){
+    const name=raw.replace(/^[\s\-•*–\[\]\d.):]+/,'').trim();
+    if(name){items.push({id:Date.now().toString(36)+Math.random().toString(36).slice(2,6),name,manual:null,checked:false});n++}
+  }
+  if(n){save();render()}
+}
+function add(){const i=$('inp');addText(i.value);i.value='';i.focus()}
+$('inp').addEventListener('keydown',e=>{if(e.key==='Enter')add()});
+$('inp').addEventListener('paste',e=>{
+  const t=(e.clipboardData||window.clipboardData).getData('text');
+  if(/[\n,;]/.test(t)){e.preventDefault();addText(t)}
+});
+function listen(){
+  const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+  if(!SR){alert('Ditado por voz não é suportado neste navegador. Tente o Chrome ou o Safari.');return}
+  const r=new SR();r.lang='pt-BR';r.interimResults=false;
+  const m=$('mic');m.classList.add('on');
+  r.onresult=e=>addText(e.results[0][0].transcript,true);
+  r.onerror=()=>alert('Não consegui ouvir. Tente de novo.');
+  r.onend=()=>m.classList.remove('on');
+  r.start();
+}
+function clearAll(){if(confirm('Apagar toda a lista "'+listId+'"?')){items=[];save();render()}}
+function uncheckAll(){items.forEach(i=>i.checked=false);save();render()}
 
-    /* -------------------------------------------------------------
-       3. MAPEAMENTO DOS SETORES DA LOJA
-    ----------------------------------------------------------------- */
-    function normalize(text) {
-      return text.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim();
-    }
+/* ---------- RENDER ---------- */
+function mode(m){view=m;render();scrollTo(0,0)}
+function start(){mode('route')}
+const selHtml=it=>{const s=secOf(it);
+  return `<select class="pill${s?'':' warn'}" data-sec="${it.id}" aria-label="Setor de ${esc(it.name)}">${s?'':'<option value="">Escolher setor…</option>'}${SEC.map(x=>`<option value="${x.id}"${s&&s.id===x.id?' selected':''}>${x.name}</option>`).join('')}</select>`};
+function render(){
+  $('edit').classList.toggle('hide',view!=='edit');
+  $('route').classList.toggle('hide',view!=='route');
+  view==='edit'?renderList():renderRoute();
+}
+function renderList(){
+  $('list').innerHTML=items.length?items.map(it=>`<div class="it"><div><strong>${esc(it.name)}</strong>${selHtml(it)}</div><button class="x" data-del="${it.id}" aria-label="Excluir ${esc(it.name)}">×</button></div>`).join(''):'<div class="empty">Lista vazia. Digite, cole ou dite os itens acima.</div>';
+  $('go').classList.toggle('hide',!items.length);$('clr').classList.toggle('hide',!items.length);
+}
+function legPath(a,b){return `L${b[0]} ${a[1]} L${b[0]} ${b[1]}`}
+function mapSvg(order,doneIds,curId){
+  const act=new Set(order.map(s=>s.id));
+  let g='<rect x="0" y="0" width="780" height="440" rx="10" fill="var(--bg)"/>';
+  for(const s of SEC){
+    const [x,y,w,h]=s.r,on=act.has(s.id),dn=doneIds.has(s.id);
+    g+=`<g data-go="${s.id}"><rect x="${x}" y="${y}" width="${w}" height="${h}" rx="8" fill="${dn?'var(--gns)':on?'var(--rds)':'var(--sh)'}" stroke="${dn?'var(--gn)':on?'var(--rd)':'none'}" stroke-width="${s.id===curId?5:2}"/>`+
+      (on?`<text x="${x+w/2}" y="${y+h-12}" text-anchor="middle" font-size="19" font-weight="600" fill="var(--ink)">${s.short}</text>`:`<text x="${x+w/2}" y="${y+h/2+6}" text-anchor="middle" font-size="15" fill="var(--mu)" opacity=".55">${s.short}</text>`)+'</g>';
+  }
+  g+=`<rect x="${CX[0]}" y="408" width="${CX[1]-CX[0]}" height="26" rx="6" fill="var(--sh)"/><text x="${(CX[0]+CX[1])/2}" y="427" text-anchor="middle" font-size="17" fill="var(--mu)">caixas</text>`;
+  g+=`<rect x="8" y="408" width="80" height="26" rx="6" fill="var(--rd)"/><text x="48" y="427" text-anchor="middle" font-size="16" font-weight="800" fill="#fff">entrada 1</text>`;
+  g+=`<text x="531" y="427" text-anchor="middle" font-size="15" fill="var(--mu)" opacity=".55">entrada 2</text>`;
+  // trajeto
+  const pts=[ST,...order.map(s=>[s.x,s.y])],last=pts[pts.length-1],cp=[Math.min(Math.max(last[0],CX[0]),CX[1]),CX[2]];
+  let on='',off='',cur='',seen=false;
+  order.forEach((s,i)=>{
+    const a=pts[i],b=pts[i+1],seg=`M${a[0]} ${a[1]} ${legPath(a,b)}`;
+    if(doneIds.has(s.id))off+=seg;else{on+=seg;if(!seen){cur=seg;seen=true}}
+  });
+  const tail=`M${last[0]} ${last[1]} ${legPath(last,cp)}`;
+  const exit=`M${cp[0]} ${cp[1]} L${ST[0]} ${ST[1]-2}`;
+  const P=(d,c,w,x='')=>d?`<path d="${d}" fill="none" stroke="${c}" stroke-width="${w}" stroke-linejoin="round" stroke-linecap="round" ${x}/>`:'';
+  g+=P(off,'var(--gn)',4,'opacity=".6"')+P(on,'var(--rd)',5,'opacity=".75"')+P(cur,'#fff',3,'stroke-dasharray="2 14"><animate attributeName="stroke-dashoffset" from="32" to="0" dur="1.2s" repeatCount="indefinite"/></path><path d="" ')+P(tail,'var(--rd)',5,'opacity=".75"')+P(exit,'var(--mu)',4,'stroke-dasharray="3 10"');
+  order.forEach((s,i)=>{
+    const dn=doneIds.has(s.id);
+    g+=`<g data-go="${s.id}"><circle cx="${s.x}" cy="${s.y}" r="21" fill="${dn?'var(--gn)':'var(--rd)'}" stroke="var(--sf)" stroke-width="4"/><text x="${s.x}" y="${s.y+8}" text-anchor="middle" font-size="23" font-weight="800" fill="#fff">${dn?'✓':i+1}</text></g>`;
+  });
+  return `<svg viewBox="0 0 780 440" role="img" aria-label="Mapa da loja com a rota">${g}</svg>`;
+}
+const open=new Set();
+function renderRoute(){
+  const groups=new Map(),orphan=[];
+  items.forEach(it=>{const s=secOf(it);if(!s)return orphan.push(it);if(!groups.has(s.id))groups.set(s.id,[]);groups.get(s.id).push(it)});
+  const order=plan([...groups.keys()].map(id=>BY[id]));
+  const doneIds=new Set(order.filter(s=>groups.get(s.id).every(i=>i.checked)).map(s=>s.id));
+  const nextIdx=order.findIndex(s=>!doneIds.has(s.id)),next=order[nextIdx];
+  $('map').innerHTML=mapSvg(order,doneIds,next&&next.id);
+  const nx=$('nx'),left=items.filter(i=>!i.checked).length;
+  nx.classList.toggle('ok',!next&&!orphan.some(i=>!i.checked));
+  nx.innerHTML=next?`<div class="n">${nextIdx+1}</div><div><small>Próxima parada · faltam ${left} ${left===1?'item':'itens'}</small><b>${next.name}</b></div>`:
+    items.length?`<div class="n">✓</div><div><small>${left?'Só faltam itens sem setor':'Tudo no carrinho'}</small><b>${left?'Procure os itens abaixo':'Siga para os caixas'}</b></div>`:'<div><b>Lista vazia</b></div>';
+  const chk=it=>`<label class="ck${it.checked?' d':''}"><input type="checkbox" data-ck="${it.id}"${it.checked?' checked':''}><span>${esc(it.name)}</span></label>`;
+  let h=order.map((s,i)=>{
+    const its=groups.get(s.id),dn=doneIds.has(s.id),cur=next&&next.id===s.id,nd=its.filter(x=>x.checked).length,exp=!dn||open.has(s.id);
+    return `<div class="card stop${dn?' done':''}${cur?' cur':''}" id="stop-${s.id}"><button class="sh" data-tg="${s.id}"><div class="bd">${dn?'✓':i+1}</div><span><b>${s.name}</b><small>${s.zone}</small></span><small>${nd}/${its.length}</small></button>${exp?its.map(chk).join(''):''}</div>`;
+  }).join('');
+  if(orphan.length)h+=`<div class="card stop"><div class="sh"><div class="bd" style="background:var(--mu)">?</div><span><b>Sem setor definido</b><small>Escolha um setor para entrar na rota</small></span></div>${orphan.map(it=>chk(it)+`<div style="padding:0 14px 12px">${selHtml(it)}</div>`).join('')}</div>`;
+  if(items.length)h+=`<p class="fin">Depois: caixas e saída pela entrada 1</p>`;
+  $('stops').innerHTML=h;
+}
 
-    const SECTORS = [
-      { id: "bebidas", order: 1, zone: "Entrada / Frente", name: "Bebidas, Sorvetes e Gelo", tags: ["bebida", "refrigerante", "agua", "suco", "sorvete", "gelo", "cerveja", "vinho", "espumante", "energetico"] },
-      { id: "laticinios", order: 2, zone: "Corredor Central - Esquerda", name: "Laticínios e Manteigas", tags: ["iogurte", "requeijao", "margarina", "manteiga", "yakult"] },
-      { id: "frios", order: 3, zone: "Fundos - Esquerda", name: "Frios e Queijos", tags: ["linguicinha", "linguica", "bacon", "salame", "queijo", "frios", "presunto", "peito de peru", "mortadela"] },
-      { id: "graos", order: 4, zone: "Frente - Esquerda", name: "Grãos e Mercearia Seca", tags: ["arroz", "feijao", "farinha", "açucar", "acucar", "sal", "achocolatado", "nescau", "toddy", "graos", "farofa"] },
-      { id: "leite_ovos", order: 5, zone: "Corredor Central - Esquerda", name: "Leite e Ovos", tags: ["leite", "ovo", "ovos", "leite desnatado", "leite integral"] },
-      { id: "padaria", order: 6, zone: "Fundos - Esquerda/Meio", name: "Padaria e Pães", tags: ["padaria", "pao", "paes", "salgado", "doce de padaria", "suco natural de laranja", "doce de festa", "cuca"] },
-      { id: "acougue", order: 8, zone: "Fundos - Direita", name: "Açougue e Peixaria", tags: ["acougue", "carne", "carnes", "frango", "carne de porco", "porco", "peixe", "peixes", "picanha", "maminha", "costela", "alcatra", "moida"] },
-      { id: "cama_mesa_banho", order: 9, zone: "Fundos - Extrema Direita", name: "Cama, Mesa e Banho", tags: ["roupa", "pijama", "roupa de cama", "travesseiro", "toalha", "coberta", "lençol"] },
-      { id: "prataria", order: 10, zone: "Corredor Central - Extrema Direita", name: "Prataria e Cerâmicas", tags: ["prataria", "ceramica", "prato", "copo", "caneca", "talher", "panela", "decoracao"] },
-      { id: "pet_ferragem", order: 11, zone: "Corredor Central - Direita", name: "Ferragem, Carro e Pet", tags: ["ferragem", "ferramenta", "oleo", "carro", "parafuso", "conserto", "racao", "gato", "cachorro", "pet"] },
-      { id: "hortifruti", order: 12, zone: "Corredor Central - Meio", name: "Hortifruti e Flores", tags: ["hortifruti", "fruta", "verdura", "legume", "banana", "maca", "tomate", "cebola", "alho", "batata", "cenoura", "alface", "flores", "flor"] },
-      { id: "cereais", order: 13, zone: "Corredor Central - Meio/Esquerda", name: "Cereais e Salgadinhos", tags: ["cereal", "barrinha", "barrinha de cereal", "sucrilhos", "chocolate", "salgadinho", "doritos", "cheetos", "fandangos", "bala", "bombom"] },
-      { id: "molhos", order: 14, zone: "Corredor Central - Esquerda", name: "Molhos e Enlatados", tags: ["leite condensado", "molho", "extrato de tomate", "creme de leite", "leite em po", "enlatado", "milho", "ervilha", "sardinha", "atun", "tempero", "fermento", "pasta de amendoim"] },
-      { id: "eletronicos", order: 15, zone: "Frente - Extrema Direita", name: "Eletrônicos e Cigarros", tags: ["eletronico", "tv", "radio", "computador", "eletrodomestico", "geladeira", "isqueiro", "cigarro", "pilha"] },
-      { id: "bazar", order: 16, zone: "Frente - Direita", name: "Bazar e Papelaria", tags: ["papelaria", "brinquedo", "camping", "praia", "churrasco", "pote", "pote de plastico", "pote de vidro", "carvao"] },
-      { id: "higiene_limpeza", order: 17, zone: "Frente - Próximo aos Caixas", name: "Higiene e Limpeza", tags: ["sabonete", "papel higienico", "shampoo", "condicionador", "desodorante", "creme dental", "pasta de dente", "lenco umedecido", "agua sanitaria", "detergente", "sabao", "amaciante", "esponja", "pano", "limpeza"] },
-      { id: "doces_compotas", order: 18, zone: "Frente - Próximo aos Caixas", name: "Doces em Compota e Gelatinas", tags: ["doce", "compota", "mumu", "doce de leite", "bolo", "bolo pronto", "gelatina", "pudim"] },
-      { id: "biscoitos_cafe", order: 19, zone: "Frente - Próximo aos Caixas", name: "Biscoitos, Café e Massas", tags: ["biscoito", "bolacha", "cafe", "massa", "macarrao", "erva mate", "spaghetti", "miojo"] }
-    ];
+/* ---------- EVENTOS ---------- */
+document.addEventListener('click',e=>{
+  const t=e.target.closest('[data-del],[data-tg],[data-go]');if(!t)return;
+  if(t.dataset.del){items=items.filter(i=>i.id!==t.dataset.del);save();render()}
+  else if(t.dataset.tg){const id=t.dataset.tg;open.has(id)?open.delete(id):open.add(id);renderRoute()}
+  else if(t.dataset.go){const el=$('stop-'+t.dataset.go);if(el)el.scrollIntoView({behavior:'smooth',block:'start'})}
+});
+document.addEventListener('change',e=>{
+  const t=e.target;
+  if(t.dataset.ck){const it=items.find(i=>i.id===t.dataset.ck);if(it){it.checked=t.checked;save();render()}}
+  if(t.dataset.sec){const it=items.find(i=>i.id===t.dataset.sec);if(it){it.manual=t.value||null;save();render()}}
+});
 
-    let items = [];
-
-    /* -------------------------------------------------------------
-       4. PERSISTÊNCIA & FIREBASE
-    ----------------------------------------------------------------- */
-    function saveItems() {
-      localStorage.setItem(`zaffari_items_${currentListId}`, JSON.stringify(items));
-      if (useFirebase && dbRef) {
-        dbRef.set(items);
-      }
-    }
-
-    function initStorageAndFirebase() {
-      updateListDisplay();
-
-      if (useFirebase) {
-        if (dbRef) dbRef.off();
-        dbRef = firebase.database().ref(`lists/${currentListId}`);
-        
-        dbRef.on('value', (snapshot) => {
-          const val = snapshot.val();
-          if (!val) {
-            items = [];
-          } else if (Array.isArray(val)) {
-            items = val;
-          } else {
-            items = Object.keys(val).map(key => ({
-              id: val[key].id || key,
-              ...val[key]
-            }));
-          }
-
-          items.forEach(item => {
-            if (!item.sector) {
-              item.sector = findSector(item.name);
-            }
-          });
-
-          renderList();
-        });
-      } else {
-        const local = localStorage.getItem(`zaffari_items_${currentListId}`);
-        items = local ? JSON.parse(local) : [];
-        renderList();
-      }
-    }
-
-    function findSector(itemName) {
-      const cleanInput = normalize(itemName);
-      let bestMatch = null;
-      let maxTagLength = 0;
-
-      for (const sector of SECTORS) {
-        for (const tag of sector.tags) {
-          const cleanTag = normalize(tag);
-          if (cleanInput.includes(cleanTag)) {
-            if (cleanTag.length > maxTagLength) {
-              maxTagLength = cleanTag.length;
-              bestMatch = sector;
-            }
-          }
-        }
-      }
-      return bestMatch || SECTORS[3];
-    }
-
-    /* -------------------------------------------------------------
-       5. PROCESSAMENTO DE TEXTO (INDIVIDUAL OU MÚLTIPLOS ITENS)
-    ----------------------------------------------------------------- */
-    function processBulkText(text) {
-      if (!text || !text.trim()) return;
-
-      const rawItems = text.split(/[\n,]+/);
-      let addedCount = 0;
-
-      rawItems.forEach(raw => {
-        // Limpa marcadores (hífens, bolinhas, números como "1.", etc.)
-        let cleanName = raw.replace(/^[\s\-\•\*\-\–\[\]\d\.\)\:]+/, '').trim();
-
-        if (cleanName.length > 0) {
-          const sector = findSector(cleanName);
-          items.push({ id: Date.now() + Math.random(), name: cleanName, sector: sector, checked: false });
-          addedCount++;
-        }
-      });
-
-      if (addedCount > 0) {
-        saveItems();
-        renderList();
-      }
-    }
-
-    function addItem() {
-      const input = document.getElementById('item-input');
-      const val = input.value.trim();
-      if (!val) return;
-
-      processBulkText(val);
-      input.value = '';
-    }
-
-    // CAPTURA O EVENTO DE COLAR (PASTE) NA BARRA DE ENTRADA
-    document.addEventListener('DOMContentLoaded', () => {
-      const inputEl = document.getElementById('item-input');
-      inputEl.addEventListener('paste', (event) => {
-        const pastedText = (event.clipboardData || window.clipboardData).getData('text');
-        
-        // Se o texto tiver quebra de linha ou vírgulas, processa tudo automaticamente
-        if (pastedText && (pastedText.includes('\n') || pastedText.includes(','))) {
-          event.preventDefault();
-          processBulkText(pastedText);
-          inputEl.value = '';
-        }
-      });
-    });
-
-    /* -------------------------------------------------------------
-       6. DITAR POR VOZ (NATIVO DO NAVEGADOR)
-    ----------------------------------------------------------------- */
-    function startVoiceRecognition() {
-      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-      
-      if (!SpeechRecognition) {
-        alert("O reconhecimento de voz não é suportado pelo seu navegador. Tente pelo Chrome ou Safari.");
-        return;
-      }
-
-      const recognition = new SpeechRecognition();
-      recognition.lang = 'pt-BR';
-      recognition.continuous = false;
-      recognition.interimResults = false;
-
-      const micBtn = document.getElementById('mic-btn');
-      const micText = document.getElementById('mic-text');
-      const micIcon = document.getElementById('mic-icon');
-
-      micText.innerText = "Ouvindo...";
-      micIcon.innerText = "🔴";
-      micBtn.classList.add("animate-pulse");
-
-      recognition.start();
-
-      recognition.onresult = (event) => {
-        const spokenText = event.results[0][0].transcript;
-        processBulkText(spokenText);
-      };
-
-      recognition.onerror = () => {
-        alert("Não foi possível ouvir a sua voz. Tente novamente.");
-      };
-
-      recognition.onend = () => {
-        micText.innerText = "Ditar";
-        micIcon.innerText = "🎙️";
-        micBtn.classList.remove("animate-pulse");
-      };
-    }
-
-    function removeItem(id) {
-      items = items.filter(i => String(i.id) !== String(id));
-      saveItems();
-      renderList();
-    }
-
-    function clearList() {
-      if (confirm(`Tem certeza que deseja apagar a lista "${currentListId}"?`)) {
-        items = [];
-        saveItems();
-        renderList();
-      }
-    }
-
-    function renderList() {
-      const listEl = document.getElementById('shopping-list');
-      const btnStart = document.getElementById('btn-start');
-      const btnClear = document.getElementById('btn-clear');
-      listEl.innerHTML = '';
-
-      items.forEach(item => {
-        listEl.innerHTML += `
-          <li class="py-2.5 flex justify-between items-center text-sm">
-            <span>
-              <strong>${item.name}</strong> 
-              <span class="text-xs text-gray-400 dark:text-gray-500 block">Setor: ${item.sector ? item.sector.name : 'Outros'}</span>
-            </span>
-            <button onclick="removeItem('${item.id}')" class="text-red-500 hover:text-red-700 text-xs px-2 py-1">Excluir</button>
-          </li>
-        `;
-      });
-
-      if (items.length > 0) {
-        btnStart.classList.remove('hidden');
-        btnClear.classList.remove('hidden');
-      } else {
-        btnStart.classList.add('hidden');
-        btnClear.classList.add('hidden');
-      }
-    }
-
-    function startShopping() {
-      items.sort((a, b) => (a.sector ? a.sector.order : 4) - (b.sector ? b.sector.order : 4));
-      document.getElementById('panel-edit').classList.add('hidden');
-      document.getElementById('panel-route').classList.remove('hidden');
-      renderRoute();
-    }
-
-    function toggleCheck(id) {
-      const item = items.find(i => String(i.id) === String(id));
-      if (item) item.checked = !item.checked;
-      saveItems();
-      renderRoute();
-    }
-
-    function renderRoute() {
-      const routeEl = document.getElementById('route-steps');
-      routeEl.innerHTML = '';
-
-      items.forEach((item, index) => {
-        const isChecked = item.checked;
-        const sectorName = item.sector ? item.sector.name : 'Grãos e Mercearia';
-        const sectorZone = item.sector ? item.sector.zone : 'Frente - Esquerda';
-
-        routeEl.innerHTML += `
-          <div onclick="toggleCheck('${item.id}')" class="p-3.5 rounded-lg border cursor-pointer transition ${isChecked ? 'bg-gray-100 dark:bg-gray-900 border-gray-200 dark:border-gray-800 opacity-50' : 'bg-red-50 dark:bg-gray-700/50 border-red-200 dark:border-gray-600 shadow-sm'}">
-            <div class="flex items-center justify-between">
-              <div>
-                <span class="text-xs font-bold ${isChecked ? 'text-gray-400' : 'text-red-600 dark:text-red-400'}">
-                  Passo ${index + 1} • ${sectorZone}
-                </span>
-                <p class="text-base font-semibold ${isChecked ? 'line-through text-gray-400' : 'text-gray-900 dark:text-gray-100'}">
-                  item.name<spanclass="text-xsfont-normaltext-gray-500dark:text-gray-400">({sectorName})</span>
-                </p>
-              </div>
-              <input type="checkbox" ${isChecked ? 'checked' : ''} class="h-5 w-5 text-red-600 rounded">
-            </div>
-          </div>
-        `;
-      });
-    }
-
-    function resetApp() {
-      document.getElementById('panel-route').classList.add('hidden');
-      document.getElementById('panel-edit').classList.remove('hidden');
-    }
-
-    function toggleDarkMode() {
-      const html = document.documentElement;
-      const icon = document.getElementById('theme-icon');
-      if (html.classList.contains('dark')) {
-        html.classList.remove('dark');
-        icon.innerText = '🌙';
-        localStorage.setItem('theme', 'light');
-      } else {
-        html.classList.add('dark');
-        icon.innerText = '☀️';
-        localStorage.setItem('theme', 'dark');
-      }
-    }
-
-    if (localStorage.getItem('theme') === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
-      document.documentElement.classList.add('dark');
-      document.getElementById('theme-icon').innerText = '☀️';
-    }
-
-    initStorageAndFirebase();
-  </script>
+/* ---------- TEMA ---------- */
+function setTheme(d){document.documentElement.classList.toggle('dark',d);$('theme').textContent=d?'☀️':'🌙'}
+function toggleTheme(){const d=!document.documentElement.classList.contains('dark');setTheme(d);localStorage.setItem('theme',d?'dark':'light')}
+setTheme(localStorage.getItem('theme')?localStorage.getItem('theme')==='dark':matchMedia('(prefers-color-scheme: dark)').matches);
+init();
+</script>
 </body>
 </html>
-
